@@ -5,7 +5,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "NA PHÙNG STORE",
-  description: "NA PHÙNG STORE - Cửa hàng thời trang nam nữ, cập nhật những mẫu quần áo phong cách, hiện đại với giá tốt.",
+  description: "NA PHÙNG STORE - Thời trang nam nữ, cập nhật những mẫu quần áo phong cách, hiện đại với giá tốt.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
