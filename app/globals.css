@@ -6,8 +6,6 @@
   --foreground: #171717;
 }
 
-
-
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -15,9 +13,29 @@
   }
 }
 
+@theme inline {
+  --font-sans: var(--font-sf-pro-text), system-ui, sans-serif;
+  --font-display: var(--font-sf-pro-display), var(--font-sf-pro-text), system-ui, sans-serif;
+  --color-ivory: #f4efe6;
+  --color-sand: #e4d8c4;
+  --color-ink: #161412;
+  --color-gold: #b08d57;
+  --color-stone: #7a7168;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-style: normal;
   font-synthesis: none;
+}
+
+.store-shell {
+  --background: #f4efe6;
+  --foreground: #161412;
+  --font-sans: var(--font-sf-pro-text), system-ui, sans-serif;
+  background: var(--background);
+  color: var(--foreground);
+  color-scheme: light;
+  font-family: var(--font-sf-pro-text), system-ui, sans-serif;
 }

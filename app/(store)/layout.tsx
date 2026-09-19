@@ -1,3 +1,4 @@
+import Footer from "@/components/layout/Footer";
 import Header from "@/components/layout/Header";
 import { toHeaderCategoryColumns } from "@/lib/category-tree";
 import { prisma } from "@/lib/prisma";
@@ -20,9 +21,10 @@ export default async function StoreLayout({ children }: LayoutProps<"/">) {
   });
 
   return (
-    <>
+    <div className="store-shell light flex min-h-full flex-1 flex-col">
       <Header categories={toHeaderCategoryColumns(categories)} />
-      {children}
-    </>
+      <div className="flex-1">{children}</div>
+      <Footer />
+    </div>
   );
 }

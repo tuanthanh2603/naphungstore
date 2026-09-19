@@ -1,8 +1,85 @@
 import type { CategoryRecord, CategoryRow } from "@/types/admin/category";
+import type { HeroSlide, StoreCollection } from "@/types/store/home";
 import type { HeaderCategoryColumn } from "@/types/store/category";
 
 export function categoryHref(slug: string) {
   return `/danh-muc/${slug}`;
+}
+
+export function collectCategoryIds(
+  categories: Array<{ id: string; parentId: string | null }>,
+  rootId: string,
+) {
+  const ids = [rootId];
+  const queue = [rootId];
+
+  while (queue.length > 0) {
+    const currentId = queue.shift();
+
+    if (!currentId) {
+      break;
+    }
+
+    for (const category of categories) {
+      if (category.parentId === currentId) {
+        ids.push(category.id);
+        queue.push(category.id);
+      }
+    }
+  }
+
+  return ids;
+}
+
+export function toShopCategories(
+  categories: Array<
+    Pick<CategoryRecord, "id" | "name" | "slug" | "imageUrl" | "parentId" | "sortOrder" | "status">
+  >,
+): Array<StoreCollection & { children: StoreCollection[] }> {
+  const active = categories.filter((category) => category.status === "active");
+  const childrenByParent = new Map<string | null, typeof active>();
+
+  for (const category of active) {
+    const list = childrenByParent.get(category.parentId) ?? [];
+    list.push(category);
+    childrenByParent.set(category.parentId, list);
+  }
+
+  for (const list of childrenByParent.values()) {
+    list.sort(
+      (left, right) =>
+        left.sortOrder - right.sortOrder ||
+        left.name.localeCompare(right.name, "vi"),
+    );
+  }
+
+  return (childrenByParent.get(null) ?? []).map((root) => ({
+    id: root.id,
+    name: root.name,
+    slug: root.slug,
+    imageUrl: root.imageUrl ?? firstImageUrl(active, root.id),
+    children: (childrenByParent.get(root.id) ?? []).map((child) => ({
+      id: child.id,
+      name: child.name,
+      slug: child.slug,
+      imageUrl: child.imageUrl,
+    })),
+  }));
+}
+
+export function toCategoryTiles(
+  categories: Array<
+    Pick<CategoryRecord, "id" | "name" | "slug" | "imageUrl" | "parentId" | "sortOrder" | "status">
+  >,
+) {
+  const active = categories.filter((category) => category.status === "active");
+
+  return toShopCategories(categories).flatMap((root) =>
+    root.children.map((child) => ({
+      ...child,
+      imageUrl: child.imageUrl ?? firstImageUrl(active, child.id),
+    })),
+  );
 }
 
 export function toHeaderCategoryColumns(
@@ -45,6 +122,70 @@ export function toHeaderCategoryColumns(
         href: categoryHref(child.slug),
       })),
     })),
+  }));
+}
+
+function firstImageUrl(
+  categories: Array<Pick<CategoryRecord, "id" | "imageUrl" | "parentId" | "sortOrder" | "name">>,
+  id: string,
+) {
+  const byParent = new Map<string | null, typeof categories>();
+
+  for (const category of categories) {
+    const list = byParent.get(category.parentId) ?? [];
+    list.push(category);
+    byParent.set(category.parentId, list);
+  }
+
+  for (const list of byParent.values()) {
+    list.sort(
+      (left, right) =>
+        left.sortOrder - right.sortOrder ||
+        left.name.localeCompare(right.name, "vi"),
+    );
+  }
+
+  const queue = [...(byParent.get(id) ?? [])];
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+
+    if (!current) {
+      break;
+    }
+
+    if (current.imageUrl) {
+      return current.imageUrl;
+    }
+
+    queue.push(...(byParent.get(current.id) ?? []));
+  }
+
+  return null;
+}
+
+export function toHeroSlides(
+  categories: Array<
+    Pick<CategoryRecord, "id" | "name" | "slug" | "imageUrl" | "parentId" | "sortOrder" | "status">
+  >,
+): HeroSlide[] {
+  const active = categories.filter((category) => category.status === "active");
+  const roots = active
+    .filter((category) => category.parentId === null)
+    .sort(
+      (left, right) =>
+        left.sortOrder - right.sortOrder ||
+        left.name.localeCompare(right.name, "vi"),
+    );
+
+  return roots.map((root, index) => ({
+    id: root.id,
+    eyebrow: `${String(index + 1).padStart(2, "0")} / Danh mục`,
+    title: root.name,
+    description: `Xem sản phẩm thuộc ${root.name} và chọn món phù hợp.`,
+    href: categoryHref(root.slug),
+    cta: "Xem sản phẩm",
+    imageUrl: root.imageUrl ?? firstImageUrl(active, root.id),
   }));
 }
 

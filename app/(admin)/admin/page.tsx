@@ -22,10 +22,18 @@ export default async function AdminPage() {
             <p className="mt-2 text-sm text-muted">Quản lý danh mục</p>
           </Surface>
         </NextLink>
-        <Surface className="rounded-2xl border border-separator p-5">
-          <h2 className="font-medium not-italic">Sản phẩm</h2>
-          <p className="mt-2 text-sm text-muted">Quản lý sản phẩm.</p>
-        </Surface>
+        <NextLink href="/admin/carousel" className="no-underline">
+          <Surface className="rounded-2xl border border-separator p-5 transition-colors hover:bg-default-100/60">
+            <h2 className="font-medium not-italic text-foreground">Carousel</h2>
+            <p className="mt-2 text-sm text-muted">Ảnh slide trang chủ 1920×800</p>
+          </Surface>
+        </NextLink>
+        <NextLink href="/admin/product" className="no-underline">
+          <Surface className="rounded-2xl border border-separator p-5 transition-colors hover:bg-default-100/60">
+            <h2 className="font-medium not-italic text-foreground">Sản phẩm</h2>
+            <p className="mt-2 text-sm text-muted">Quản lý sản phẩm trên cửa hàng.</p>
+          </Surface>
+        </NextLink>
 
         <Surface className="rounded-2xl border border-separator p-5">
           <h2 className="font-medium not-italic">Đơn hàng</h2>

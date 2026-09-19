@@ -4,7 +4,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@/generated/prisma/client";
 import { buildDatabaseUrl, toPrismaPgConnection } from "@/lib/env";
 
-const PRISMA_CLIENT_VERSION = "tbl-category-image-v1";
+const PRISMA_CLIENT_VERSION = "tbl-product-v1";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;

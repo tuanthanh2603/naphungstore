@@ -312,10 +312,11 @@ export default function Header({
   const categoryDrawerState = useOverlayState();
 
   return (
+    <>
     <Surface
       variant="transparent"
-      className="sticky top-0 z-50 border-b border-separator bg-background/80 not-italic backdrop-blur-md"
-      render={(props) => <header {...props} className={cn(props.className, "relative")} />}
+      className="fixed inset-x-0 top-0 z-50 border-b border-separator bg-white not-italic"
+      render={(props) => <header {...props} />}
     >
       {/* Logo căn giữa màn hình */}
       <NextLink
@@ -384,5 +385,7 @@ export default function Header({
         </div>
       </div>
     </Surface>
+    <div className="h-16 shrink-0" aria-hidden="true" />
+    </>
   );
 }

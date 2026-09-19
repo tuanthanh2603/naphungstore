@@ -7,6 +7,8 @@ import { cn } from "@heroui/react";
 const navItems = [
   { href: "/admin", label: "Tổng quan" },
   { href: "/admin/category", label: "Danh mục" },
+  { href: "/admin/carousel", label: "Carousel" },
+  { href: "/admin/product", label: "Sản phẩm" },
 ];
 
 export default function AdminNav() {
