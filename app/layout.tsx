@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Header from "@/components/layout/Header";
 import { sfProDisplay, sfProText } from "@/lib/fonts";
 import "./globals.css";
 
@@ -14,10 +13,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${sfProText.variable} ${sfProDisplay.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans">
-        <Header />
-        {children}
-      </body>
+      <body className="min-h-full flex flex-col font-sans">{children}</body>
     </html>
   );
 }

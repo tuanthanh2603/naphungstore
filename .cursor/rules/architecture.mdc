@@ -1,0 +1,24 @@
+---
+description: Next.js fullstack layout — app, actions, lib, prisma
+alwaysApply: true
+---
+
+# Architecture
+
+Next.js fullstack + Prisma + Supabase PostgreSQL. Không tách BE riêng, không dùng Supabase JS.
+
+| Folder | Responsibility |
+|---|---|
+| `app/` | UI + routing only |
+| `actions/` | Mutations: create / update / delete (`"use server"`) |
+| `lib/` | Infrastructure + shared helpers (Prisma client, auth, env, fonts) |
+| `prisma/` | Database schema + seed |
+
+## Rules
+
+- Reads: query Prisma in Server Components (`app/`), not in client components.
+- Writes: go through `actions/`. Do not add `app/api` routes for CRUD.
+- Do not add `services/` or `repositories/` layers.
+- Import `prisma` only from `@/lib/prisma`. Never instantiate `PrismaClient` in UI.
+- Auth session is JWT cookie + bcrypt. Supabase is PostgreSQL host only.
+- `proxy.ts` may verify JWT; it must not import Prisma.

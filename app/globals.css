@@ -6,13 +6,7 @@
   --foreground: #171717;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-sf-pro-text);
-  --font-display: var(--font-sf-pro-display);
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-}
+
 
 @media (prefers-color-scheme: dark) {
   :root {

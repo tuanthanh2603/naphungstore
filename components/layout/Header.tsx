@@ -1,13 +1,20 @@
 "use client";
 
+import {
+  ArrowUpRightIcon,
+  Bars3Icon,
+  ChevronDownIcon,
+  MagnifyingGlassIcon,
+  ShoppingBagIcon,
+  UserIcon,
+} from "@heroicons/react/24/outline";
 import Image from "next/image";
 import NextLink from "next/link";
 import logo from "@/assets/image/logo_2.png";
 import {
   Button,
+  Disclosure,
   Drawer,
-  IconChevronDown,
-  IconSearch,
   Popover,
   Surface,
   buttonVariants,
@@ -15,135 +22,116 @@ import {
   linkVariants,
   useOverlayState,
 } from "@heroui/react";
+import type {
+  HeaderCategoryColumn,
+  HeaderCategoryItem,
+} from "@/types/store/category";
 
-const categoryColumns = [
-  {
-    id: "nam",
-    title: "Nam",
-    href: "/danh-muc/nam",
-    items: [
-      { label: "Áo nam", href: "/danh-muc/ao-nam" },
-      { label: "Quần nam", href: "/danh-muc/quan-nam" },
-      { label: "Phụ kiện nam", href: "/danh-muc/phu-kien-nam" },
-    ],
-  },
-  {
-    id: "nu",
-    title: "Nữ",
-    href: "/danh-muc/nu",
-    items: [
-      { label: "Áo nữ", href: "/danh-muc/ao-nu" },
-      { label: "Quần nữ", href: "/danh-muc/quan-nu" },
-      { label: "Phụ kiện nữ", href: "/danh-muc/phu-kien-nu" },
-    ],
-  },
-  {
-    id: "tre-em",
-    title: "Trẻ em",
-    href: "/danh-muc/tre-em",
-    items: [
-      { label: "Áo trẻ em", href: "/danh-muc/ao-tre-em" },
-      { label: "Quần trẻ em", href: "/danh-muc/quan-tre-em" },
-      { label: "Phụ kiện trẻ em", href: "/danh-muc/phu-kien-tre-em" },
-    ],
-  },
-] as const;
+function CategoryItemRow({
+  item,
+  itemClassName,
+  childClassName,
+  onNavigate,
+}: {
+  item: HeaderCategoryItem;
+  itemClassName: string;
+  childClassName: string;
+  onNavigate?: () => void;
+}) {
+  const slots = linkVariants();
 
-function CartIcon(props: React.SVGProps<SVGSVGElement>) {
+  if (!item.children?.length) {
+    return (
+      <NextLink
+        href={item.href}
+        onClick={() => onNavigate?.()}
+        className={cn(
+          slots.base(),
+          "block not-italic no-underline",
+          itemClassName,
+        )}
+      >
+        {item.label}
+      </NextLink>
+    );
+  }
+
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      {...props}
-    >
-      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
-      <path d="M3 6h18" />
-      <path d="M16 10a4 4 0 0 1-8 0" />
-    </svg>
-  );
-}
-
-function MenuIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      {...props}
-    >
-      <path d="M4 6h16" />
-      <path d="M4 12h16" />
-      <path d="M4 18h16" />
-    </svg>
-  );
-}
-
-function UserIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      {...props}
-    >
-      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
-    </svg>
+    <Disclosure>
+      <Disclosure.Heading>
+        <Disclosure.Trigger
+          className={cn(
+            "flex w-full cursor-pointer items-center justify-between not-italic",
+            itemClassName,
+          )}
+        >
+          {item.label}
+          <Disclosure.Indicator />
+        </Disclosure.Trigger>
+      </Disclosure.Heading>
+      <Disclosure.Content>
+        <Disclosure.Body className="flex flex-col gap-1 ps-3 pt-1">
+          {item.children.map((child) => (
+            <NextLink
+              key={child.id}
+              href={child.href}
+              onClick={() => onNavigate?.()}
+              className={cn(
+                slots.base(),
+                "block not-italic no-underline",
+                childClassName,
+              )}
+            >
+              {child.label}
+            </NextLink>
+          ))}
+        </Disclosure.Body>
+      </Disclosure.Content>
+    </Disclosure>
   );
 }
 
 function CategoryMenu({
+  categories,
   className,
   onNavigate,
 }: {
+  categories: HeaderCategoryColumn[];
   className?: string;
   onNavigate?: () => void;
 }) {
   const slots = linkVariants();
 
+  if (categories.length === 0) {
+    return (
+      <p className="text-sm text-muted">Chưa có danh mục.</p>
+    );
+  }
+
   return (
     <nav className={cn("flex flex-col gap-6", className)}>
-      {categoryColumns.map((column) => (
+      {categories.map((column) => (
         <div key={column.id}>
           <NextLink
             href={column.href}
             onClick={() => onNavigate?.()}
             className={cn(
               slots.base(),
-              "text-base font-semibold not-italic no-underline",
+              "flex items-center justify-between gap-2 text-base font-semibold uppercase not-italic no-underline",
             )}
           >
             {column.title}
+            <ArrowUpRightIcon className="size-4 shrink-0 text-muted" aria-hidden="true" />
           </NextLink>
           <ul className="mt-2 flex flex-col gap-1">
             {column.items.map((item) => (
-              <li key={item.href}>
-                <NextLink
-                  href={item.href}
-                  onClick={() => onNavigate?.()}
-                  className={cn(
-                    slots.base(),
-                    "block rounded-lg px-3 py-2 text-sm font-medium not-italic no-underline hover:bg-default-100",
-                  )}
-                >
-                  {item.label}
-                </NextLink>
+              <li key={item.id}>
+                <CategoryItemRow
+                  item={item}
+                  itemClassName="rounded-lg px-3 py-2 text-sm font-medium hover:bg-default-100"
+                  childClassName="rounded-lg px-3 py-2 text-sm text-muted hover:bg-default-100 hover:text-foreground"
+                  onNavigate={onNavigate}
+                />
               </li>
             ))}
           </ul>
@@ -153,47 +141,139 @@ function CategoryMenu({
   );
 }
 
-function CategoryPopover() {
+function CategoryThumb({
+  src,
+  alt,
+}: {
+  src: string | null;
+  alt: string;
+}) {
+  const frameClassName = "size-12 shrink-0 rounded-lg bg-default-100 object-cover";
+
+  if (!src) {
+    return (
+      <span
+        className={cn(frameClassName, "flex items-center justify-center text-xs text-muted")}
+        aria-hidden="true"
+      >
+        —
+      </span>
+    );
+  }
+
+  if (src.includes("res.cloudinary.com")) {
+    return (
+      <Image
+        src={src}
+        alt={alt}
+        width={48}
+        height={48}
+        className={frameClassName}
+      />
+    );
+  }
+
+  return <img src={src} alt={alt} className={frameClassName} />;
+}
+
+function DesktopCategoryItem({ item }: { item: HeaderCategoryItem }) {
+  const slots = linkVariants();
+  const thumb = <CategoryThumb src={item.imageUrl} alt={item.label} />;
+
+  if (!item.children.length) {
+    return (
+      <NextLink
+        href={item.href}
+        className={cn(
+          slots.base(),
+          "flex items-center gap-3 rounded-lg px-2 py-1.5 text-sm font-medium leading-none not-italic no-underline hover:bg-default-100",
+        )}
+      >
+        {thumb}
+        <span className="flex min-h-12 items-center">{item.label}</span>
+      </NextLink>
+    );
+  }
+
+  return (
+    <Disclosure>
+      <div className="flex items-center gap-3 rounded-lg px-2 py-1.5">
+        <NextLink href={item.href} className="flex size-12 shrink-0 items-center">
+          {thumb}
+        </NextLink>
+        <Disclosure.Heading className="min-w-0 flex-1">
+          <Disclosure.Trigger
+            className={cn(
+              "flex min-h-12 w-full cursor-pointer items-center justify-between gap-2 py-0 text-sm font-medium leading-none not-italic",
+            )}
+          >
+            {item.label}
+            <Disclosure.Indicator />
+          </Disclosure.Trigger>
+        </Disclosure.Heading>
+      </div>
+      <Disclosure.Content>
+        <Disclosure.Body className="flex flex-col gap-1 pb-1 ps-[3.75rem] pt-0">
+          {item.children.map((child) => (
+            <NextLink
+              key={child.id}
+              href={child.href}
+              className={cn(
+                slots.base(),
+                "block rounded-lg px-2 py-1.5 text-sm text-muted not-italic no-underline hover:bg-default-100 hover:text-foreground",
+              )}
+            >
+              {child.label}
+            </NextLink>
+          ))}
+        </Disclosure.Body>
+      </Disclosure.Content>
+    </Disclosure>
+  );
+}
+
+function CategoryPopover({
+  categories = [],
+}: {
+  categories?: HeaderCategoryColumn[];
+}) {
   const slots = linkVariants();
 
   return (
     <Popover>
       <Button variant="outline" className="gap-1.5">
         Danh mục
-        <IconChevronDown className="size-4" />
+        <ChevronDownIcon className="size-4" aria-hidden="true" />
       </Button>
-      <Popover.Content placement="bottom start" className="w-[min(90vw,640px)]">
+      <Popover.Content placement="bottom start" className="w-[min(90vw,760px)]">
         <Popover.Dialog>
-          <div className="grid grid-cols-3 gap-6">
-            {categoryColumns.map((column) => (
+          {categories.length === 0 ? (
+            <p className="text-sm text-muted">Chưa có danh mục.</p>
+          ) : (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {categories.map((column) => (
               <div key={column.id}>
                 <NextLink
                   href={column.href}
                   className={cn(
                     slots.base(),
-                    "text-base font-semibold not-italic no-underline",
+                    "flex items-center justify-between gap-2 text-lg font-medium uppercase not-italic no-underline",
                   )}
                 >
                   {column.title}
+                  <ArrowUpRightIcon className="size-4 shrink-0 text-muted" aria-hidden="true" />
                 </NextLink>
                 <ul className="mt-3 flex flex-col gap-1">
                   {column.items.map((item) => (
-                    <li key={item.href}>
-                      <NextLink
-                        href={item.href}
-                        className={cn(
-                          slots.base(),
-                          "block rounded-lg px-2 py-1.5 text-sm font-medium not-italic no-underline hover:bg-default-100",
-                        )}
-                      >
-                        {item.label}
-                      </NextLink>
+                    <li key={item.id}>
+                      <DesktopCategoryItem item={item} />
                     </li>
                   ))}
                 </ul>
               </div>
             ))}
           </div>
+          )}
         </Popover.Dialog>
       </Popover.Content>
     </Popover>
@@ -224,7 +304,11 @@ function IconNavLink({
   );
 }
 
-export default function Header() {
+export default function Header({
+  categories = [],
+}: {
+  categories?: HeaderCategoryColumn[];
+}) {
   const categoryDrawerState = useOverlayState();
 
   return (
@@ -251,7 +335,7 @@ export default function Header() {
         {/* Trái: Danh mục */}
         <div className="pointer-events-auto relative z-10 flex items-center">
           <div className="hidden md:block">
-            <CategoryPopover />
+            <CategoryPopover categories={categories} />
           </div>
 
           <div className="md:hidden">
@@ -262,7 +346,7 @@ export default function Header() {
                 size="md"
                 aria-label="Mở danh mục"
               >
-                <MenuIcon className="size-5" />
+                <Bars3Icon className="size-5" aria-hidden="true" />
               </Button>
               <Drawer.Backdrop>
                 <Drawer.Content placement="left" className="w-[min(85vw,280px)]">
@@ -272,7 +356,10 @@ export default function Header() {
                       <Drawer.Heading>Danh mục</Drawer.Heading>
                     </Drawer.Header>
                     <Drawer.Body>
-                      <CategoryMenu onNavigate={categoryDrawerState.close} />
+                      <CategoryMenu
+                        categories={categories}
+                        onNavigate={categoryDrawerState.close}
+                      />
                     </Drawer.Body>
                   </Drawer.Dialog>
                 </Drawer.Content>
@@ -284,23 +371,16 @@ export default function Header() {
         {/* Phải: Tìm kiếm, giỏ hàng, đăng nhập */}
         <div className="pointer-events-auto relative z-10 flex items-center justify-end gap-1 sm:gap-2">
           <IconNavLink href="/tim-kiem" label="Tìm kiếm">
-            <IconSearch className="size-5" />
+            <MagnifyingGlassIcon className="size-5" aria-hidden="true" />
           </IconNavLink>
 
           <IconNavLink href="/gio-hang" label="Giỏ hàng">
-            <CartIcon className="size-5" />
+            <ShoppingBagIcon className="size-5" aria-hidden="true" />
           </IconNavLink>
 
-          <NextLink
-            href="/dang-nhap"
-            className={cn(
-              buttonVariants({ variant: "ghost", size: "md" }),
-              "gap-1.5 not-italic",
-            )}
-          >
-            <UserIcon className="size-5 shrink-0" />
-            <span className="hidden text-sm font-medium sm:inline">Đăng nhập</span>
-          </NextLink>
+          <IconNavLink href="/dang-nhap" label="Đăng nhập">
+            <UserIcon className="size-5" aria-hidden="true" />
+          </IconNavLink>
         </div>
       </div>
     </Surface>
