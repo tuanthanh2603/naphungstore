@@ -1,7 +1,9 @@
 import ProductManager from "@/components/admin/ProductManager";
 import { flattenCategoryTree } from "@/lib/category-tree";
 import { requireAdmin } from "@/lib/auth/admin";
-import { prisma } from "@/lib/prisma";
+import { toProductImageUrls } from "@/lib/product";
+import { getPrisma } from "@/lib/prisma";
+import type { ProductRecord } from "@/types/admin/product";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -11,8 +13,9 @@ export const metadata: Metadata = {
 
 export default async function AdminProductPage() {
   await requireAdmin();
+  const prisma = getPrisma();
 
-  const [products, categories] = await Promise.all([
+  const [products, imageRows, categories] = await Promise.all([
     prisma.tblProduct.findMany({
       orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
       select: {
@@ -31,6 +34,13 @@ export default async function AdminProductPage() {
         },
       },
     }),
+    prisma.tblProductImage.findMany({
+      select: {
+        productId: true,
+        imageUrl: true,
+      },
+      orderBy: { sortOrder: "asc" },
+    }),
     prisma.tblCategory.findMany({
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
       select: {
@@ -45,12 +55,32 @@ export default async function AdminProductPage() {
     }),
   ]);
 
+  const imagesByProduct = new Map<string, Array<{ imageUrl: string }>>();
+
+  for (const image of imageRows) {
+    const list = imagesByProduct.get(image.productId) ?? [];
+    list.push({ imageUrl: image.imageUrl });
+    imagesByProduct.set(image.productId, list);
+  }
+
+  const records: ProductRecord[] = products.map((product) => ({
+    id: product.id,
+    name: product.name,
+    slug: product.slug,
+    description: product.description,
+    price: product.price,
+    imageUrl: product.imageUrl,
+    imageUrls: toProductImageUrls(product.imageUrl, imagesByProduct.get(product.id)),
+    categoryId: product.categoryId,
+    categoryName: product.category?.name ?? null,
+    sortOrder: product.sortOrder,
+    featured: product.featured,
+    status: product.status,
+  }));
+
   return (
     <ProductManager
-      products={products.map((product) => ({
-        ...product,
-        categoryName: product.category?.name ?? null,
-      }))}
+      products={records}
       categories={flattenCategoryTree(categories).map((category) => ({
         id: category.id,
         name: category.name,

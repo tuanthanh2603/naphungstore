@@ -24,15 +24,20 @@ import {
   useOverlayState,
 } from "@heroui/react";
 
+type ProductImageDraft = {
+  key: string;
+  url: string;
+  preview: string;
+  file: File | null;
+};
+
 type ProductFormState = {
   id?: string;
   name: string;
   slug: string;
   description: string;
   price: string;
-  imageUrl: string;
-  imagePreview: string;
-  imageFile: File | null;
+  images: ProductImageDraft[];
   categoryId: string;
   sortOrder: string;
   featured: boolean;
@@ -44,14 +49,21 @@ const emptyForm: ProductFormState = {
   slug: "",
   description: "",
   price: "",
-  imageUrl: "",
-  imagePreview: "",
-  imageFile: null,
+  images: [],
   categoryId: "",
   sortOrder: "0",
   featured: false,
   status: "active",
 };
+
+function createImageDraft(url: string): ProductImageDraft {
+  return {
+    key: url,
+    url,
+    preview: url,
+    file: null,
+  };
+}
 
 export default function ProductManager({
   products,
@@ -84,9 +96,7 @@ export default function ProductManager({
       slug: product.slug,
       description: product.description ?? "",
       price: String(product.price),
-      imageUrl: product.imageUrl ?? "",
-      imagePreview: product.imageUrl ?? "",
-      imageFile: null,
+      images: product.imageUrls.map(createImageDraft),
       categoryId: product.categoryId ?? "",
       sortOrder: String(product.sortOrder),
       featured: product.featured,
@@ -104,29 +114,66 @@ export default function ProductManager({
     }));
   }
 
-  async function handleImageChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+  function handleImageChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const files = [...(event.target.files ?? [])];
     event.target.value = "";
 
-    if (!file) {
+    if (files.length === 0) {
       return;
     }
 
-    setError("");
+    const oversized = files.find((file) => file.size > PRODUCT_IMAGE.maxBytes);
+
+    if (oversized) {
+      setError("Ảnh sản phẩm không quá 5MB.");
+      return;
+    }
+
+    setForm((current) => {
+      const remaining = PRODUCT_IMAGE.maxCount - current.images.length;
+      const nextFiles = files.slice(0, remaining);
+
+      if (nextFiles.length === 0) {
+        setError(`Mỗi sản phẩm tối đa ${PRODUCT_IMAGE.maxCount} ảnh.`);
+        return current;
+      }
+
+      setError("");
+      return {
+        ...current,
+        images: [
+          ...current.images,
+          ...nextFiles.map((file) => ({
+            key: `${file.name}-${file.size}-${file.lastModified}-${Math.random()}`,
+            url: "",
+            preview: URL.createObjectURL(file),
+            file,
+          })),
+        ],
+      };
+    });
+  }
+
+  function removeImage(key: string) {
     setForm((current) => ({
       ...current,
-      imageFile: file,
-      imagePreview: URL.createObjectURL(file),
+      images: current.images.filter((image) => image.key !== key),
     }));
   }
 
-  function clearImage() {
-    setForm((current) => ({
-      ...current,
-      imageUrl: "",
-      imagePreview: "",
-      imageFile: null,
-    }));
+  function setCover(key: string) {
+    setForm((current) => {
+      const selected = current.images.find((image) => image.key === key);
+
+      if (!selected) {
+        return current;
+      }
+
+      return {
+        ...current,
+        images: [selected, ...current.images.filter((image) => image.key !== key)],
+      };
+    });
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -135,19 +182,26 @@ export default function ProductManager({
     setIsSaving(true);
 
     try {
-      let imageUrl = form.imageUrl;
+      const imageUrls: string[] = [];
 
-      if (form.imageFile) {
-        const payload = new FormData();
-        payload.set("file", form.imageFile);
-        const upload = await uploadProductImage(payload);
+      for (const image of form.images) {
+        if (image.file) {
+          const payload = new FormData();
+          payload.set("file", image.file);
+          const upload = await uploadProductImage(payload);
 
-        if (upload.error || !upload.url) {
-          setError(upload.error ?? "Không thể tải ảnh lên.");
-          return;
+          if (upload.error || !upload.url) {
+            setError(upload.error ?? "Không thể tải ảnh lên.");
+            return;
+          }
+
+          imageUrls.push(upload.url);
+          continue;
         }
 
-        imageUrl = upload.url;
+        if (image.url) {
+          imageUrls.push(image.url);
+        }
       }
 
       const payload = {
@@ -155,7 +209,7 @@ export default function ProductManager({
         slug: form.slug,
         description: form.description,
         price: form.price,
-        imageUrl,
+        imageUrls,
         categoryId: form.categoryId,
         sortOrder: Number(form.sortOrder),
         featured: form.featured,
@@ -211,7 +265,8 @@ export default function ProductManager({
         <div>
           <h1 className="text-2xl font-semibold not-italic">Quản lý sản phẩm</h1>
           <p className="mt-1 text-sm text-muted">
-            Ảnh được cắt vuông {PRODUCT_IMAGE.width}×{PRODUCT_IMAGE.height}px để khớp lưới cửa hàng.
+            Mỗi sản phẩm tối đa {PRODUCT_IMAGE.maxCount} ảnh, mỗi ảnh không quá
+            5MB, lưu trong project (`/uploads/products`). Ảnh đầu tiên là ảnh đại diện.
           </p>
         </div>
         <Button variant="primary" onPress={openCreate}>
@@ -261,6 +316,7 @@ export default function ProductManager({
                     <p className="mt-1 truncate text-xs text-muted">
                       {formatVnd(product.price)}
                       {product.categoryName ? ` · ${product.categoryName}` : ""}
+                      {` · ${product.imageUrls.length} ảnh`}
                       {` · Thứ tự ${product.sortOrder}`}
                     </p>
                   </div>
@@ -296,35 +352,62 @@ export default function ProductManager({
                 <Modal.Body className="flex flex-col gap-4">
                   <div className="flex flex-col gap-1.5 text-sm">
                     <span>Ảnh sản phẩm</span>
-                    <div className="aspect-square w-36 overflow-hidden rounded-xl border border-separator bg-default-100">
-                      {form.imagePreview ? (
-                        <img
-                          src={form.imagePreview}
-                          alt=""
-                          className="size-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex size-full items-center justify-center text-xs text-muted">
-                          1:1
-                        </div>
-                      )}
-                    </div>
+                    {form.images.length > 0 ? (
+                      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                        {form.images.map((image, index) => (
+                          <div
+                            key={image.key}
+                            className="relative overflow-hidden rounded-xl border border-separator bg-default-100"
+                          >
+                            <img
+                              src={image.preview}
+                              alt=""
+                              className="aspect-square size-full object-cover"
+                            />
+                            {index === 0 ? (
+                              <span className="absolute left-1 top-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] text-white">
+                                Ảnh bìa
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setCover(image.key)}
+                                className="absolute left-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white"
+                              >
+                                Làm ảnh bìa
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => removeImage(image.key)}
+                              className="absolute right-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white"
+                            >
+                              Xóa
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex h-24 items-center justify-center rounded-xl border border-dashed border-separator text-xs text-muted">
+                        Chưa có ảnh. Có thể chọn nhiều ảnh cùng lúc.
+                      </div>
+                    )}
                     <div className="flex flex-wrap gap-2">
                       <label className="inline-flex cursor-pointer items-center rounded-xl border border-separator px-3 py-2 text-sm not-italic hover:bg-default-100/60">
-                        Chọn ảnh
+                        Thêm ảnh
                         <input
                           type="file"
                           accept="image/jpeg,image/png,image/webp,image/gif"
+                          multiple
                           className="sr-only"
                           onChange={handleImageChange}
                         />
                       </label>
-                      {form.imagePreview ? (
-                        <Button size="sm" variant="outline" onPress={clearImage}>
-                          Xóa ảnh
-                        </Button>
-                      ) : null}
                     </div>
+                    <span className="text-xs text-muted">
+                      {form.images.length}/{PRODUCT_IMAGE.maxCount} ảnh, mỗi ảnh
+                      không quá 5MB. Ảnh đầu tiên hiện trên lưới cửa hàng.
+                    </span>
                   </div>
 
                   <TextField

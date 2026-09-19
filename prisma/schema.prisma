@@ -63,22 +63,36 @@ model TblCarousel {
 }
 
 model TblProduct {
-  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id          String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String
-  slug        String       @unique
+  slug        String            @unique
   description String?
   price       Int
-  imageUrl    String?      @map("image_url")
-  categoryId  String?      @map("category_id") @db.Uuid
-  category    TblCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  sortOrder   Int          @default(0) @map("sort_order")
-  featured    Boolean      @default(false)
-  status      String       @default("active")
-  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+  imageUrl    String?           @map("image_url")
+  categoryId  String?           @map("category_id") @db.Uuid
+  category    TblCategory?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  images      TblProductImage[]
+  sortOrder   Int               @default(0) @map("sort_order")
+  featured    Boolean           @default(false)
+  status      String            @default("active")
+  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@index([categoryId])
   @@index([status, featured, sortOrder])
   @@map("tbl_product")
+  @@schema("naphung")
+}
+
+model TblProductImage {
+  id        String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  productId String     @map("product_id") @db.Uuid
+  product   TblProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  imageUrl  String     @map("image_url")
+  sortOrder Int        @default(0) @map("sort_order")
+  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([productId, sortOrder])
+  @@map("tbl_product_image")
   @@schema("naphung")
 }

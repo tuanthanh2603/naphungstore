@@ -4,5 +4,6 @@ export type StoreProduct = {
   slug: string;
   price: number;
   imageUrl: string | null;
+  imageUrls?: string[];
   categoryName: string | null;
 };

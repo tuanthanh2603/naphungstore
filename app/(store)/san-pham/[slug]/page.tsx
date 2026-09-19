@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import NextLink from "next/link";
 import { notFound } from "next/navigation";
 import ProductCard from "@/components/store/ProductCard";
-import StoreMedia from "@/components/store/StoreMedia";
+import ProductGallery from "@/components/store/ProductGallery";
 import { categoryHref } from "@/lib/category-tree";
 import { formatVnd } from "@/lib/money";
+import { toProductImageUrls } from "@/lib/product";
 import { prisma } from "@/lib/prisma";
 
 type ProductPageProps = PageProps<"/san-pham/[slug]">;
@@ -47,6 +48,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
     notFound();
   }
 
+  const productImages = await prisma.tblProductImage.findMany({
+    where: { productId: product.id },
+    select: { imageUrl: true },
+    orderBy: { sortOrder: "asc" },
+  });
+
   const related = product.categoryId
     ? await prisma.tblProduct.findMany({
         where: {
@@ -72,9 +79,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <section className="grid gap-8 lg:grid-cols-2">
-        <div className="relative aspect-square overflow-hidden bg-sand">
-          <StoreMedia src={product.imageUrl} alt={product.name} priority />
-        </div>
+        <ProductGallery
+          images={toProductImageUrls(product.imageUrl, productImages)}
+          name={product.name}
+        />
 
         <div className="flex flex-col justify-center">
           {product.category ? (

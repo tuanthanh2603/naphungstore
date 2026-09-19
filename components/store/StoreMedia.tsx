@@ -14,7 +14,7 @@ export default function StoreMedia({
   priority?: boolean;
   sizes?: string;
 }) {
-  if (src?.includes("res.cloudinary.com")) {
+  if (src?.includes("res.cloudinary.com") || src?.startsWith("/")) {
     return (
       <Image
         src={src}

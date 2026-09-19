@@ -3,15 +3,16 @@ import "server-only";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@/generated/prisma/client";
 import { buildDatabaseUrl, toPrismaPgConnection } from "@/lib/env";
+import type { PrismaClient as PrismaClientInstance } from "@/types/prisma";
 
-const PRISMA_CLIENT_VERSION = "tbl-product-v1";
+const PRISMA_CLIENT_VERSION = "tbl-product-image-v2";
 
 const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
+  prisma: PrismaClientInstance | undefined;
   prismaVersion: string | undefined;
 };
 
-function createPrismaClient() {
+function createPrismaClient(): PrismaClientInstance {
   const databaseUrl = buildDatabaseUrl();
 
   if (!databaseUrl) {
@@ -24,10 +25,10 @@ function createPrismaClient() {
     schema: "naphung",
   });
 
-  return new PrismaClient({ adapter });
+  return new PrismaClient({ adapter }) as PrismaClientInstance;
 }
 
-export function getPrisma() {
+export function getPrisma(): PrismaClientInstance {
   if (
     !globalForPrisma.prisma ||
     globalForPrisma.prismaVersion !== PRISMA_CLIENT_VERSION
@@ -39,11 +40,4 @@ export function getPrisma() {
   return globalForPrisma.prisma;
 }
 
-export const prisma = new Proxy({} as PrismaClient, {
-  get(_target, property) {
-    const client = getPrisma();
-    const value = Reflect.get(client, property, client);
-
-    return typeof value === "function" ? value.bind(client) : value;
-  },
-});
+export const prisma = getPrisma();
