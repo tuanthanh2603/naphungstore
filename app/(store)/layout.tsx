@@ -2,6 +2,8 @@ import Header from "@/components/layout/Header";
 import { toHeaderCategoryColumns } from "@/lib/category-tree";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export default async function StoreLayout({ children }: LayoutProps<"/">) {
   const categories = await prisma.tblCategory.findMany({
     where: { status: "active" },

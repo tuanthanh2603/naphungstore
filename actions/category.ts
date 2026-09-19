@@ -47,6 +47,17 @@ export async function uploadCategoryImage(
   return uploadCategoryImageFile(file);
 }
 
+type CategoryParentRef = {
+  parentId: string | null;
+};
+
+async function findCategoryParent(id: string): Promise<CategoryParentRef | null> {
+  return prisma.tblCategory.findUnique({
+    where: { id },
+    select: { parentId: true },
+  });
+}
+
 async function wouldCreateCycle(categoryId: string, parentId: string) {
   let currentId: string | null = parentId;
 
@@ -55,11 +66,7 @@ async function wouldCreateCycle(categoryId: string, parentId: string) {
       return true;
     }
 
-    const parent = await prisma.tblCategory.findUnique({
-      where: { id: currentId },
-      select: { parentId: true },
-    });
-
+    const parent = await findCategoryParent(currentId);
     currentId = parent?.parentId ?? null;
   }
 
@@ -79,10 +86,7 @@ async function getCategoryLevel(id: string): Promise<number | null> {
     seen.add(currentId);
     level += 1;
 
-    const node = await prisma.tblCategory.findUnique({
-      where: { id: currentId },
-      select: { parentId: true },
-    });
+    const node = await findCategoryParent(currentId);
 
     if (!node) {
       return null;
